@@ -1,8 +1,8 @@
 import { startOfHour } from 'date-fns';
-import { getCustomRepository } from 'typeorm';
+import { injectable ,inject } from 'tsyringe';
 
 import Appointment from '@modules/appointments/infra/typeorm/entities/Appointment';
-import AppointmentRepository from '../repositories/AppointmentsRepository';
+import IAppointmentsRepository from '../repositories/IAppointmentsRepository';
 
 import AppError from '@shared/errors/AppError';
 
@@ -11,19 +11,24 @@ interface Request {
   date: Date;
 }
 
+@injectable()
 class CreateAppointmentService {
+  constructor(
+    @inject('AppointmentsRepository')
+    private appointmentsRepository: IAppointmentsRepository,
+  ) {}
+
+
   public async execute({ provider_id, date }: Request): Promise<Appointment> {
-    const appointmentsRepository = getCustomRepository(AppointmentRepository);
 
     const appointmentDate =  startOfHour(date);
-    const findAppointmentInSameDate = await appointmentsRepository.findByDate(appointmentDate);
+    const findAppointmentInSameDate = await this.appointmentsRepository.findByDate(appointmentDate);
 
     if(findAppointmentInSameDate) {
       throw new AppError('This appointment is already booked');
     }
 
-    const appointment = appointmentsRepository.create({ provider_id, date: appointmentDate });
-    await appointmentsRepository.save(appointment);
+    const appointment = await this.appointmentsRepository.create({ provider_id, date: appointmentDate });
 
     return appointment;
   }
