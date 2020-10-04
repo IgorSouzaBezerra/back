@@ -5,16 +5,20 @@ import authConfig from '@config/auth';
 
 import AppError from '@shared/errors/AppError';
 
-interface TokenPayload {
+interface ITokenPayload {
   iat: number;
   exp: number;
   sub: string;
 }
 
-export default function ensureAuthenticated(request: Request, response: Response, next: NextFunction): void {
+export default function ensureAuthenticated(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+): void {
   const authHeader = request.headers.authorization;
 
-  if(!authHeader) {
+  if (!authHeader) {
     throw new AppError('JWT token is missing', 401);
   }
 
@@ -25,11 +29,11 @@ export default function ensureAuthenticated(request: Request, response: Response
   try {
     const decoded = verify(token, secret);
 
-    const { sub } = decoded as TokenPayload;
+    const { sub } = decoded as ITokenPayload;
 
     request.user = {
-      id: sub
-    }
+      id: sub,
+    };
 
     return next();
   } catch {
